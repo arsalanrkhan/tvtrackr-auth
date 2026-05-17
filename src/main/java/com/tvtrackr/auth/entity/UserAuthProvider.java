@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Entity
 @Table(name = "user_auth_providers", schema = "auth")
 @Getter
 @Setter
 @NoArgsConstructor
+@Accessors(chain = true)
 public class UserAuthProvider extends BaseEntity {
 
     @Id

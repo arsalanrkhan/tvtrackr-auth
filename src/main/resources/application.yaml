@@ -31,3 +31,12 @@ app:
     public-key: ${JWT_PUBLIC_KEY}
     access-token-expiry-ms: ${JWT_ACCESS_TOKEN_EXPIRY_MS:900000}
     refresh-token-expiry-ms: ${JWT_REFRESH_TOKEN_EXPIRY_MS:2592000000}
+  refresh-token:
+    expiry-days: 30
+
+redis:
+  cache:
+    password-reset:
+      ttl: 900000L
+    email-verification:
+      ttl: 900000L
