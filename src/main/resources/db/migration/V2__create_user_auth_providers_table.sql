@@ -6,6 +6,7 @@ CREATE TABLE auth.user_auth_providers (
     password_hash VARCHAR(255),
     version       BIGINT          NOT NULL DEFAULT 0,
     created_at    TIMESTAMP       NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMP       NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_auth_providers_user
         FOREIGN KEY (user_id) REFERENCES auth.users (id)
