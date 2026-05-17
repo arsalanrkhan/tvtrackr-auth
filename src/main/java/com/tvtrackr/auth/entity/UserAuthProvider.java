@@ -1,6 +1,6 @@
-package com.tvtrackr.auth_service.entity;
+package com.tvtrackr.auth.entity;
 
-import com.tvtrackr.auth_service.constants.enums.AuthProvider;
+import com.tvtrackr.auth.constants.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

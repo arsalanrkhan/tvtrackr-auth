@@ -1,6 +1,6 @@
-package com.tvtrackr.auth_service.repository;
+package com.tvtrackr.auth.repository;
 
-import com.tvtrackr.auth_service.entity.User;
+import com.tvtrackr.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

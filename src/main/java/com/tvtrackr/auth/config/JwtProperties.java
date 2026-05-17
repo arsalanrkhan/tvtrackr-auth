@@ -1,4 +1,4 @@
-package com.tvtrackr.auth_service.config;
+package com.tvtrackr.auth.config;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
