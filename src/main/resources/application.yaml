@@ -6,15 +6,15 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        default_schema: auth
+        default_schema: auth_db
         dialect: org.hibernate.dialect.PostgreSQLDialect
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
   flyway:
-    schemas: auth
-    default-schema: auth
+    schemas: auth_db
+    default-schema: auth_db
     locations: classpath:db/migration
   data:
     redis:
