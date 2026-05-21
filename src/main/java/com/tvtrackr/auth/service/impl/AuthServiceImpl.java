@@ -1,5 +1,7 @@
 package com.tvtrackr.auth.service.impl;
 
+import static com.tvtrackr.auth.util.ApplicationUtil.isValidToken;
+
 import com.tvtrackr.auth.constants.enums.AuthProvider;
 import com.tvtrackr.auth.dto.req.ForgotPasswordRequest;
 import com.tvtrackr.auth.dto.req.LoginRequest;
@@ -10,10 +12,7 @@ import com.tvtrackr.auth.entity.RefreshToken;
 import com.tvtrackr.auth.entity.User;
 import com.tvtrackr.auth.entity.UserAuthProvider;
 import com.tvtrackr.auth.exception.AuthErrors;
-import com.tvtrackr.auth.service.AuthService;
-import com.tvtrackr.auth.service.RefreshTokenService;
-import com.tvtrackr.auth.service.TokenService;
-import com.tvtrackr.auth.service.UserService;
+import com.tvtrackr.auth.service.*;
 import com.tvtrackr.auth.validator.RegisterRequestValidator;
 import com.tvtrackr.common.error.BusinessException;
 import jakarta.servlet.http.Cookie;
@@ -76,17 +75,30 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void logout(String refreshTokenStr, HttpServletResponse response) {
     RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
-    if (refreshToken.isRevoked() || refreshToken.isExpired()) {
+    if (!isValidToken(refreshToken)) {
       throw new BusinessException(AuthErrors.INVALID_REFRESH_TOKEN);
     }
-    refreshToken.setRevoked(true);
-    refreshTokenService.save(refreshToken);
+    refreshTokenService.revoke(refreshToken);
     clearRefreshTokenCookie(response);
   }
 
   @Override
-  public AuthResponse refresh(String refreshToken) {
-    return null;
+  @Transactional
+  public AuthResponse refresh(String refreshTokenStr, HttpServletResponse response) {
+    // Fetching and validating refresh token
+    RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
+    if (!isValidToken(refreshToken)) {
+      throw new BusinessException(AuthErrors.INVALID_REFRESH_TOKEN);
+    }
+
+    // Revoking old refresh token & generating new refresh and access tokens
+    User user = refreshToken.getUser();
+    refreshTokenService.revoke(refreshToken);
+
+    RefreshToken newRefreshToken = refreshTokenService.generateAndSaveRefreshToken(user);
+    setRefreshTokenCookie(response, newRefreshToken.getToken());
+
+    return buildAuthResponse(user, tokenService.generateAccessToken(user));
   }
 
   @Override
@@ -125,22 +137,21 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
-  private void setRefreshTokenCookie(HttpServletResponse response, String token) {
-    Cookie cookie = new Cookie("refreshToken", token);
+  private Cookie buildCookie(String value, int maxAge) {
+    Cookie cookie = new Cookie("refreshToken", value);
     cookie.setHttpOnly(true);
     cookie.setSecure(true);
     cookie.setPath("/");
-    cookie.setMaxAge((int) (refreshTokenExpiryDays * 24 * 60 * 60));
-    response.addCookie(cookie);
+    cookie.setMaxAge(maxAge);
+    return cookie;
+  }
+
+  private void setRefreshTokenCookie(HttpServletResponse response, String token) {
+    response.addCookie(buildCookie(token, (int) (refreshTokenExpiryDays * 24 * 60 * 60)));
   }
 
   private void clearRefreshTokenCookie(HttpServletResponse response) {
-    Cookie cookie = new Cookie("refreshToken", "");
-    cookie.setHttpOnly(true);
-    cookie.setSecure(true);
-    cookie.setPath("/");
-    cookie.setMaxAge(0);
-    response.addCookie(cookie);
+    response.addCookie(buildCookie("", 0));
   }
 
   private AuthResponse buildAuthResponse(User user, String accessToken) {

@@ -45,4 +45,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   public RefreshToken save(RefreshToken refreshToken) {
     return refreshTokenRepository.save(refreshToken);
   }
+
+  @Override
+  public RefreshToken revoke(RefreshToken refreshToken) {
+    refreshToken.setRevoked(true);
+    return refreshTokenRepository.save(refreshToken);
+  }
 }
