@@ -1,6 +1,6 @@
 package com.tvtrackr.auth.service.impl;
 
-import static com.tvtrackr.auth.exception.AuthErrors.INVALID_REFRESH_TOKEN;
+import static com.tvtrackr.auth.exception.AuthErrors.INVALID_TOKEN;
 
 import com.tvtrackr.auth.entity.RefreshToken;
 import com.tvtrackr.auth.entity.User;
@@ -9,6 +9,7 @@ import com.tvtrackr.auth.service.RefreshTokenService;
 import com.tvtrackr.auth.service.TokenService;
 import com.tvtrackr.common.error.BusinessException;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   public RefreshToken find(String tokenStr) {
     return refreshTokenRepository
         .findByToken(tokenStr)
-        .orElseThrow(() -> new BusinessException(INVALID_REFRESH_TOKEN));
+        .orElseThrow(() -> new BusinessException(INVALID_TOKEN));
   }
 
   @Override
@@ -50,5 +51,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   public RefreshToken revoke(RefreshToken refreshToken) {
     refreshToken.setRevoked(true);
     return refreshTokenRepository.save(refreshToken);
+  }
+
+  @Override
+  public void revokeAllByUserId(Long userId) {
+    List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId);
+    tokens.forEach(t -> t.setRevoked(true));
+    refreshTokenRepository.saveAll(tokens);
   }
 }

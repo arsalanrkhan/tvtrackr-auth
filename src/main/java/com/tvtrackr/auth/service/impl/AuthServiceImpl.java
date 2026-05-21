@@ -31,6 +31,8 @@ public class AuthServiceImpl implements AuthService {
   private final TokenService tokenService;
   private final RefreshTokenService refreshTokenService;
   private final UserService userService;
+  private final UserAuthProviderService userAuthProviderService;
+  private final TokenCacheService tokenCacheService;
   private final RegisterRequestValidator registerRequestValidator;
 
   @Value("${app.refresh-token.expiry-days}")
@@ -76,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
   public void logout(String refreshTokenStr, HttpServletResponse response) {
     RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
     if (!isValidToken(refreshToken)) {
-      throw new BusinessException(AuthErrors.INVALID_REFRESH_TOKEN);
+      throw new BusinessException(AuthErrors.INVALID_TOKEN);
     }
     refreshTokenService.revoke(refreshToken);
     clearRefreshTokenCookie(response);
@@ -88,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
     // Fetching and validating refresh token
     RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
     if (!isValidToken(refreshToken)) {
-      throw new BusinessException(AuthErrors.INVALID_REFRESH_TOKEN);
+      throw new BusinessException(AuthErrors.INVALID_TOKEN);
     }
 
     // Revoking old refresh token & generating new refresh and access tokens
@@ -102,13 +104,55 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void forgotPassword(ForgotPasswordRequest request) {}
+  public void forgotPassword(ForgotPasswordRequest request) {
+    User user;
+    try {
+      user = userService.getUserByEmail(request.getEmail());
+    } catch (BusinessException be) {
+      // Do not throw an error if user doesn't exist to avoid enumeration attack
+      return;
+    }
+    String token = tokenService.generateRefreshToken();
+    tokenCacheService.savePasswordResetToken(token, user.getId());
+
+    // TODO: Send email to the user with password reset link
+  }
 
   @Override
-  public void resetPassword(ResetPasswordRequest request) {}
+  @Transactional
+  public void resetPassword(ResetPasswordRequest request) {
+    Long userId =
+        tokenCacheService
+            .getPasswordResetToken(request.getToken())
+            .orElseThrow(() -> new BusinessException(AuthErrors.INVALID_TOKEN));
+    User user = userService.getUserById(userId);
+    UserAuthProvider authProvider =
+        user.getAuthProviders().stream()
+            .filter(a -> AuthProvider.LOCAL.equals(a.getProvider()))
+            .findFirst()
+            .orElseThrow(() -> new BusinessException(AuthErrors.PASSWORD_RESET_NOT_SUPPORTED));
+
+    String passHash = passwordEncoder.encode(request.getNewPassword());
+    authProvider.setPasswordHash(passHash);
+    userAuthProviderService.save(authProvider);
+
+    tokenCacheService.deletePasswordResetToken(request.getToken());
+    refreshTokenService.revokeAllByUserId(user.getId());
+  }
 
   @Override
-  public void verifyEmail(String token) {}
+  @Transactional
+  public void verifyEmail(String token) {
+    Long userId =
+        tokenCacheService
+            .getEmailVerificationToken(token)
+            .orElseThrow(() -> new BusinessException(AuthErrors.INVALID_TOKEN));
+    User user = userService.getUserById(userId);
+    user.setEmailVerified(true);
+    userService.save(user);
+
+    tokenCacheService.deleteEmailVerificationToken(token);
+  }
 
   private User toUser(RegisterRequest request) {
     User user = new User();

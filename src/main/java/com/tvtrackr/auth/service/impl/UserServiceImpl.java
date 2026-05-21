@@ -21,6 +21,18 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmail(String email) {
+    return userRepository.findByEmail(email)
+        .orElseThrow(() -> new BusinessException(AuthErrors.USER_NOT_FOUND));
+  }
+
+  @Override
+  public User getUserById(Long id) {
+    return userRepository.findById(id)
+        .orElseThrow(() -> new BusinessException(AuthErrors.USER_NOT_FOUND));
+  }
+
+  @Override
   public User save(User user) {
     return userRepository.save(user);
   }

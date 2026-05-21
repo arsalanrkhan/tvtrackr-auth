@@ -10,9 +10,11 @@ public class AuthErrors extends BusinessErrors {
   public static final AuthErrors USER_NOT_FOUND =
       new AuthErrors("1002", "User not found", 400);
   public static final AuthErrors INVALID_CREDENTIALS =
-      new AuthErrors("1003", "Invalid credentials", 403);
-  public static final AuthErrors INVALID_REFRESH_TOKEN =
-      new AuthErrors("1004", "Invalid refresh token", 400);
+      new AuthErrors("1003", "Invalid credentials", 401);
+  public static final AuthErrors INVALID_TOKEN =
+      new AuthErrors("1004", "Invalid token", 400);
+  public static final AuthErrors PASSWORD_RESET_NOT_SUPPORTED =
+      new AuthErrors("1005", "Password reset not supported for this account", 400);
 
   protected AuthErrors(String code, String desc, int httpStatus) {
     super(code, desc, httpStatus);
