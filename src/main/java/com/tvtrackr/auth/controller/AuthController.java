@@ -1,9 +1,6 @@
 package com.tvtrackr.auth.controller;
 
-import com.tvtrackr.auth.dto.req.ForgotPasswordRequest;
-import com.tvtrackr.auth.dto.req.LoginRequest;
-import com.tvtrackr.auth.dto.req.RegisterRequest;
-import com.tvtrackr.auth.dto.req.ResetPasswordRequest;
+import com.tvtrackr.auth.dto.req.*;
 import com.tvtrackr.auth.dto.res.AuthResponse;
 import com.tvtrackr.auth.dto.res.MessageResponse;
 import com.tvtrackr.auth.exception.AuthErrors;
@@ -67,6 +64,13 @@ public class AuthController {
   public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
     authService.verifyEmail(token);
     return ResponseEntity.ok(new MessageResponse().setMessage("Email verified"));
+  }
+
+  @PostMapping("/resend-verification-email")
+  public ResponseEntity<MessageResponse> resendVerificationEmail(
+      @RequestBody @Valid ResendVerificationEmailRequest request) {
+    authService.resendVerificationEmail(request);
+    return ResponseEntity.ok(new MessageResponse().setMessage("Email sent"));
   }
 
   private String extractRefreshToken(HttpServletRequest request) {

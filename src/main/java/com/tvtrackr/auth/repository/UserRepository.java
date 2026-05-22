@@ -1,22 +1,26 @@
 package com.tvtrackr.auth.repository;
 
 import com.tvtrackr.auth.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByUuid(UUID uuid);
+  Optional<User> findByUuid(UUID uuid);
 
-    Optional<User> findByEmail(String email);
+  Optional<User> findByEmail(String email);
 
-    Optional<User> findByUsername(String username);
+  List<User> findAllByEmailVerifiedFalseAndCreatedAtBefore(LocalDateTime cutoff);
 
-    Optional<User> findByEmailOrUsername(String email, String username);
+  Optional<User> findByUsername(String username);
 
-    boolean existsByEmail(String email);
+  Optional<User> findByEmailOrUsername(String email, String username);
 
-    boolean existsByUsername(String username);
+  boolean existsByEmail(String email);
+
+  boolean existsByUsername(String username);
 }

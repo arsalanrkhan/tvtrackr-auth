@@ -32,14 +32,29 @@ app:
     refresh-token-expiry-ms: ${JWT_REFRESH_TOKEN_EXPIRY_MS:2592000000}
   refresh-token:
     expiry-days: 30
+  frontend:
+    base-url: ${FRONTEND_BASE_URL}
+  scheduler:
+    cleanup:
+      after-days: ${CLEANUP_UNVERIFIED_USERS_AFTER_DAYS:7}
 
 redis:
   cache:
     password-reset:
       ttl: 900000
+      cooldown:
+        ttl: 60000
     email-verification:
       ttl: 900000
+      cooldown:
+        ttl: 60000
 
 logging:
   level:
     root: INFO
+
+resend:
+  url: ${RESEND_URL:https://api.resend.com}
+  api-key: ${RESEND_API_KEY}
+  from-email: ${RESEND_FROM_EMAIL}
+  from-name: ${RESEND_FROM_NAME:TVTrackr}

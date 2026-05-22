@@ -3,10 +3,8 @@ package com.tvtrackr.auth.service.impl;
 import static com.tvtrackr.auth.util.ApplicationUtil.isValidToken;
 
 import com.tvtrackr.auth.constants.enums.AuthProvider;
-import com.tvtrackr.auth.dto.req.ForgotPasswordRequest;
-import com.tvtrackr.auth.dto.req.LoginRequest;
-import com.tvtrackr.auth.dto.req.RegisterRequest;
-import com.tvtrackr.auth.dto.req.ResetPasswordRequest;
+import com.tvtrackr.auth.constants.enums.GlobalConstants;
+import com.tvtrackr.auth.dto.req.*;
 import com.tvtrackr.auth.dto.res.AuthResponse;
 import com.tvtrackr.auth.entity.RefreshToken;
 import com.tvtrackr.auth.entity.User;
@@ -35,7 +33,20 @@ public class AuthServiceImpl implements AuthService {
   private final UserService userService;
   private final UserAuthProviderService userAuthProviderService;
   private final TokenCacheService tokenCacheService;
+  private final CooldownCacheService cooldownCacheService;
+  private final AuthEmailService authEmailService;
   private final RegisterRequestValidator registerRequestValidator;
+
+  private static final String PASSWORD_RESET_CD_PREFIX =
+      GlobalConstants.REDIS_PREFIX + "cooldown:passwordReset:";
+  private static final String EMAIL_VERIFY_CD_PREFIX =
+      GlobalConstants.REDIS_PREFIX + "cooldown:emailVerification:";
+
+  @Value("${redis.cache.password-reset.cooldown.ttl}")
+  private Long passwordResetCooldownTtl;
+
+  @Value("${redis.cache.email-verification.cooldown.ttl}")
+  private Long emailVerificationCooldownTtl;
 
   @Value("${app.refresh-token.expiry-days}")
   private Long refreshTokenExpiryDays;
@@ -54,7 +65,12 @@ public class AuthServiceImpl implements AuthService {
     userService.save(user);
 
     String accessToken = tokenService.generateAccessToken(user);
-    log.info("[Register User] Successful for email {}", request.getEmail());
+    log.info(
+        "[Register User] Successful for email {}. Generating verification email",
+        request.getEmail());
+
+    sendVerificationEmail(user);
+
     return new AuthResponse()
         .setUuid(user.getUuid().toString())
         .setEmail(user.getEmail())
@@ -124,14 +140,19 @@ public class AuthServiceImpl implements AuthService {
           "[Password Reset] Email {} not found. Returning empty response", request.getEmail());
       return;
     }
+
+    if (cooldownCacheService.isOnCooldown(toPasswordResetCooldownKey(user.getId()))) {
+      log.warn("[Password Reset] Too many requests for user={}", user.getUuid());
+      throw new BusinessException(AuthErrors.TOO_MANY_REQUESTS);
+    }
+
     String token = tokenService.generateRefreshToken();
     tokenCacheService.savePasswordResetToken(token, user.getId());
 
-    // TODO: Send email to the user with password reset link
+    authEmailService.sendPasswordResetEmail(user.getEmail(), user.getDisplayName(), token);
+    cooldownCacheService.setCooldown(
+        toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl);
     log.info("[Password Reset] Password reset email sent to {}", request.getEmail());
-
-    log.debug(
-        "[Password Reset] Password reset email sent to {}, token={}", request.getEmail(), token);
   }
 
   @Override
@@ -155,6 +176,9 @@ public class AuthServiceImpl implements AuthService {
 
     tokenCacheService.deletePasswordResetToken(request.getToken());
     refreshTokenService.revokeAllByUserId(user.getId());
+
+    cooldownCacheService.setCooldown(
+        toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl);
     log.info(
         "[Password Reset] Successfully reset password for user={} email={}",
         user.getUsername(),
@@ -173,6 +197,28 @@ public class AuthServiceImpl implements AuthService {
     userService.save(user);
 
     tokenCacheService.deleteEmailVerificationToken(token);
+  }
+
+  @Override
+  public void resendVerificationEmail(ResendVerificationEmailRequest request) {
+    User user;
+    try {
+      user = userService.getUserByEmail(request.getEmail());
+    } catch (BusinessException be) {
+      return;
+    }
+    if (user.isEmailVerified()) {
+      return;
+    }
+    if (cooldownCacheService.isOnCooldown(toResendVerificationCooldownKey(user.getId()))) {
+      log.warn("[Resend Verification Email] Too many requests for user={}", user.getUuid());
+      throw new BusinessException(AuthErrors.TOO_MANY_REQUESTS);
+    }
+    log.info("[Resend Verification Email] Sending email for {}", request.getEmail());
+    sendVerificationEmail(user);
+    cooldownCacheService.setCooldown(
+        toResendVerificationCooldownKey(user.getId()), emailVerificationCooldownTtl);
+    log.info("[Resend Verification Email] Sent email for {}", request.getEmail());
   }
 
   private User toUser(RegisterRequest request) {
@@ -219,11 +265,26 @@ public class AuthServiceImpl implements AuthService {
     response.addCookie(buildCookie("", 0));
   }
 
+  private void sendVerificationEmail(User user) {
+    String verificationToken = tokenService.generateRefreshToken();
+    tokenCacheService.saveEmailVerificationToken(verificationToken, user.getId());
+    authEmailService.sendEmailVerificationEmail(
+        user.getEmail(), user.getDisplayName(), verificationToken);
+  }
+
   private AuthResponse buildAuthResponse(User user, String accessToken) {
     return new AuthResponse()
         .setUsername(user.getUsername())
         .setUuid(user.getUuid().toString())
         .setEmail(user.getEmail())
         .setAccessToken(accessToken);
+  }
+
+  private String toPasswordResetCooldownKey(Long userId) {
+    return PASSWORD_RESET_CD_PREFIX + userId;
+  }
+
+  private String toResendVerificationCooldownKey(Long userId) {
+    return EMAIL_VERIFY_CD_PREFIX + userId;
   }
 }
