@@ -104,13 +104,6 @@
         </dependency>
         <!-- DB Migrations End -->
 
-        <!-- Logging Starts -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-log4j2</artifactId>
-        </dependency>
-        <!-- Logging Ends -->
-
         <!-- Libraries Start -->
         <dependency>
             <groupId>com.tvtrackr</groupId>

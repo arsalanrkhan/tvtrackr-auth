@@ -43,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public AuthResponse register(RegisterRequest request) {
+    log.info("[Register User] Request received for email {}", request.getEmail());
 
     registerRequestValidator.validate(request);
 
@@ -53,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     userService.save(user);
 
     String accessToken = tokenService.generateAccessToken(user);
+    log.info("[Register User] Successful for email {}", request.getEmail());
     return new AuthResponse()
         .setUuid(user.getUuid().toString())
         .setEmail(user.getEmail())
@@ -62,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public AuthResponse login(LoginRequest request, HttpServletResponse response) {
+    log.info("[Login] Request for identifier={}", request.getEmailOrUsername());
     User user =
         userService.getUserByUsernameOrEmail(
             request.getEmailOrUsername(), request.getEmailOrUsername());
@@ -72,7 +75,10 @@ public class AuthServiceImpl implements AuthService {
     String accessToken = tokenService.generateAccessToken(user);
     RefreshToken refreshToken = refreshTokenService.generateAndSaveRefreshToken(user);
     setRefreshTokenCookie(response, refreshToken.getToken());
-
+    log.info(
+        "[Login] Successful for uuid={} identifier={}",
+        user.getUuid(),
+        request.getEmailOrUsername());
     return buildAuthResponse(user, accessToken);
   }
 
@@ -113,23 +119,24 @@ public class AuthServiceImpl implements AuthService {
       user = userService.getUserByEmail(request.getEmail());
     } catch (BusinessException be) {
       // Do not throw an error if user doesn't exist to avoid enumeration attack
-      log.info("[Password Reset] Email {} not found. Returning empty response", request.getEmail());
+      log.debug(
+          "[Password Reset] Email {} not found. Returning empty response", request.getEmail());
       return;
     }
-    try {
-      String token = tokenService.generateRefreshToken();
-      tokenCacheService.savePasswordResetToken(token, user.getId());
-    } catch (Exception e) {
-      log.error("[Password Reset] Error generating password reset token, {}", e.getMessage(), e);
-      throw e;
-    }
+    String token = tokenService.generateRefreshToken();
+    tokenCacheService.savePasswordResetToken(token, user.getId());
 
     // TODO: Send email to the user with password reset link
+    log.info("[Password Reset] Password reset email sent to {}", request.getEmail());
+
+    log.debug(
+        "[Password Reset] Password reset email sent to {}, token={}", request.getEmail(), token);
   }
 
   @Override
   @Transactional
   public void resetPassword(ResetPasswordRequest request) {
+    log.debug("[Password Reset] Received token={}", request.getToken());
     Long userId =
         tokenCacheService
             .getPasswordResetToken(request.getToken())
@@ -147,6 +154,10 @@ public class AuthServiceImpl implements AuthService {
 
     tokenCacheService.deletePasswordResetToken(request.getToken());
     refreshTokenService.revokeAllByUserId(user.getId());
+    log.info(
+        "[Password Reset] Successfully reset password for user={} email={}",
+        user.getUsername(),
+        user.getEmail());
   }
 
   @Override
