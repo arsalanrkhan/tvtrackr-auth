@@ -221,6 +221,11 @@ public class AuthServiceImpl implements AuthService {
     log.info("[Resend Verification Email] Sent email for {}", request.getEmail());
   }
 
+  @Override
+  public boolean usernameAvailability(String username) {
+    return !userService.existsByUsername(username);
+  }
+
   private User toUser(RegisterRequest request) {
     User user = new User();
     return user.setEmail(request.getEmail())

@@ -3,6 +3,7 @@ package com.tvtrackr.auth.controller;
 import com.tvtrackr.auth.dto.req.*;
 import com.tvtrackr.auth.dto.res.AuthResponse;
 import com.tvtrackr.auth.dto.res.MessageResponse;
+import com.tvtrackr.auth.dto.res.UsernameAvailabilityResponse;
 import com.tvtrackr.auth.exception.AuthErrors;
 import com.tvtrackr.auth.service.AuthService;
 import com.tvtrackr.common.error.BusinessException;
@@ -10,14 +11,17 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
 
 @RestController
 @RequestMapping("/api/auth/v1")
 @RequiredArgsConstructor
+@Validated
 public class AuthController {
 
   private final AuthService authService;
@@ -71,6 +75,14 @@ public class AuthController {
       @RequestBody @Valid ResendVerificationEmailRequest request) {
     authService.resendVerificationEmail(request);
     return ResponseEntity.ok(new MessageResponse().setMessage("Email sent"));
+  }
+
+  @GetMapping("/usernames/{username}/availability")
+  public ResponseEntity<UsernameAvailabilityResponse> usernameAvailability(
+      @PathVariable @Size(min = 3, message = "Username must be at least 3 characters")
+          String username) {
+    boolean available = authService.usernameAvailability(username);
+    return ResponseEntity.ok(new UsernameAvailabilityResponse().setAvailable(available));
   }
 
   private String extractRefreshToken(HttpServletRequest request) {

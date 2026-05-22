@@ -21,4 +21,6 @@ public interface AuthService {
   void verifyEmail(String token);
 
   void resendVerificationEmail(ResendVerificationEmailRequest request);
+
+  boolean usernameAvailability(String username);
 }
