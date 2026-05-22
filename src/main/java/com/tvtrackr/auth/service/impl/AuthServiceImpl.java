@@ -83,6 +83,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   public void logout(String refreshTokenStr, HttpServletResponse response) {
     RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
     if (!isValidToken(refreshToken)) {
@@ -96,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
   @Transactional
   public AuthResponse refresh(String refreshTokenStr, HttpServletResponse response) {
     // Fetching and validating refresh token
-    RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
+    RefreshToken refreshToken = refreshTokenService.findForUpdate(refreshTokenStr);
     if (!isValidToken(refreshToken)) {
       throw new BusinessException(AuthErrors.INVALID_TOKEN);
     }

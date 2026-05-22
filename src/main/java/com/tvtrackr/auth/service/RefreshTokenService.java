@@ -9,6 +9,8 @@ public interface RefreshTokenService {
 
   RefreshToken find(String token);
 
+  RefreshToken findForUpdate(String tokenStr);
+
   RefreshToken save(RefreshToken refreshToken);
 
   RefreshToken revoke(RefreshToken refreshToken);

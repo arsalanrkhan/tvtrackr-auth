@@ -13,6 +13,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   public RefreshToken find(String tokenStr) {
     return refreshTokenRepository
         .findByToken(tokenStr)
+        .orElseThrow(() -> new BusinessException(INVALID_TOKEN));
+  }
+
+  @Override
+  @Transactional
+  public RefreshToken findForUpdate(String tokenStr) {
+    return refreshTokenRepository
+        .findByTokenForUpdate(tokenStr)
         .orElseThrow(() -> new BusinessException(INVALID_TOKEN));
   }
 
