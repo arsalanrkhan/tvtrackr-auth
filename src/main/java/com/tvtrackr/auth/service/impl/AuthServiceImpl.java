@@ -13,11 +13,13 @@ import com.tvtrackr.auth.exception.AuthErrors;
 import com.tvtrackr.auth.service.*;
 import com.tvtrackr.auth.validator.RegisterRequestValidator;
 import com.tvtrackr.common.error.BusinessException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,18 +55,22 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  public AuthResponse register(RegisterRequest request) {
+  public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
     log.info("[Register User] Request received for email {}", request.getEmail());
 
     registerRequestValidator.validate(request);
 
     User user = toUser(request);
-    userService.save(user);
-
     user.getAuthProviders().add(toAuthProvider(user, request.getPassword()));
-    userService.save(user);
+    try {
+      userService.save(user);
+    } catch (DataIntegrityViolationException exception) {
+      throw new BusinessException(AuthErrors.EMAIL_OR_USERNAME_ALREADY_EXISTS);
+    }
 
     String accessToken = tokenService.generateAccessToken(user);
+    RefreshToken refreshToken = refreshTokenService.generateAndSaveRefreshToken(user);
+    setRefreshTokenCookie(response, refreshToken.getToken());
     log.info(
         "[Register User] Successful for email {}. Generating verification email",
         request.getEmail());
@@ -79,6 +85,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   public AuthResponse login(LoginRequest request, HttpServletResponse response) {
     log.info("[Login] Request for identifier={}", request.getEmailOrUsername());
     User user =
@@ -101,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public void logout(String refreshTokenStr, HttpServletResponse response) {
-    RefreshToken refreshToken = refreshTokenService.find(refreshTokenStr);
+    RefreshToken refreshToken = refreshTokenService.findForUpdate(refreshTokenStr);
     if (!isValidToken(refreshToken)) {
       throw new BusinessException(AuthErrors.INVALID_TOKEN);
     }
@@ -174,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
     authProvider.setPasswordHash(passHash);
     userAuthProviderService.save(authProvider);
 
-    tokenCacheService.deletePasswordResetToken(request.getToken());
+    tokenCacheService.getAndDeletePasswordResetToken(request.getToken());
     refreshTokenService.revokeAllByUserId(user.getId());
 
     cooldownCacheService.setCooldown(
@@ -187,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  public void verifyEmail(String token) {
+  public AuthResponse verifyEmail(String token) {
     Long userId =
         tokenCacheService
             .getEmailVerificationToken(token)
@@ -196,7 +203,8 @@ public class AuthServiceImpl implements AuthService {
     user.setEmailVerified(true);
     userService.save(user);
 
-    tokenCacheService.deleteEmailVerificationToken(token);
+    tokenCacheService.getAndDeleteEmailVerificationToken(token);
+    return buildAuthResponse(user, tokenService.generateAccessToken(user));
   }
 
   @Override
@@ -228,7 +236,7 @@ public class AuthServiceImpl implements AuthService {
 
   private User toUser(RegisterRequest request) {
     User user = new User();
-    return user.setEmail(request.getEmail())
+    return user.setEmail(request.getEmail().toLowerCase().trim())
         .setUsername(request.getUsername())
         .setDisplayName(request.getDisplayName());
   }
@@ -253,21 +261,24 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
-  private Cookie buildCookie(String value, int maxAge) {
-    Cookie cookie = new Cookie("refreshToken", value);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(true);
-    cookie.setPath("/");
-    cookie.setMaxAge(maxAge);
-    return cookie;
+  private void addResponseCookie(HttpServletResponse response, String value, long maxAge) {
+    ResponseCookie cookie =
+        ResponseCookie.from("refreshToken", value)
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .maxAge(maxAge)
+            .sameSite("Strict")
+            .build();
+    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }
 
   private void setRefreshTokenCookie(HttpServletResponse response, String token) {
-    response.addCookie(buildCookie(token, (int) (refreshTokenExpiryDays * 24 * 60 * 60)));
+    addResponseCookie(response, token, refreshTokenExpiryDays * 24 * 60 * 60);
   }
 
   private void clearRefreshTokenCookie(HttpServletResponse response) {
-    response.addCookie(buildCookie("", 0));
+    addResponseCookie(response, "", 0);
   }
 
   private void sendVerificationEmail(User user) {

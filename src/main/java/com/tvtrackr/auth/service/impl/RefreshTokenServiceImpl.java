@@ -9,7 +9,6 @@ import com.tvtrackr.auth.service.RefreshTokenService;
 import com.tvtrackr.auth.service.TokenService;
 import com.tvtrackr.common.error.BusinessException;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -64,8 +63,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
   @Override
   public void revokeAllByUserId(Long userId) {
-    List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId);
-    tokens.forEach(t -> t.setRevoked(true));
-    refreshTokenRepository.saveAll(tokens);
+    refreshTokenRepository.revokeAllByUserId(userId);
   }
 }

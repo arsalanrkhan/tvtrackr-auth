@@ -18,7 +18,7 @@ public class RegisterRequestValidator {
     if (userRepository.existsByEmail(request.getEmail())) {
       throw new BusinessException(EMAIL_ALREADY_EXISTS);
     }
-    if (userRepository.existsByUsername(request.getUsername())) {
+    if (userRepository.existsByUsernameCaseInsensitive(request.getUsername())) {
       throw new BusinessException(USERNAME_ALREADY_EXISTS);
     }
   }

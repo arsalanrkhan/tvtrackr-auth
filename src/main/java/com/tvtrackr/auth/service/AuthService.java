@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthService {
 
-  AuthResponse register(RegisterRequest request);
+  AuthResponse register(RegisterRequest request, HttpServletResponse response);
 
   AuthResponse login(LoginRequest request, HttpServletResponse response);
 
@@ -18,7 +18,7 @@ public interface AuthService {
 
   void resetPassword(ResetPasswordRequest request);
 
-  void verifyEmail(String token);
+  AuthResponse verifyEmail(String token);
 
   void resendVerificationEmail(ResendVerificationEmailRequest request);
 

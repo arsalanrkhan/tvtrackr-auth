@@ -1,9 +1,7 @@
 package com.tvtrackr.auth.scheduler;
 
-import com.tvtrackr.auth.entity.User;
 import com.tvtrackr.auth.repository.UserRepository;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,19 +22,13 @@ public class UnverifiedUserCleanupScheduler {
   @Scheduled(cron = "0 0 0 * * *")
   @Transactional
   public void cleanupUnverifiedUsers() {
-
     LocalDateTime cutoff = LocalDateTime.now().minusDays(cleanupAfterDays);
-    List<User> users = userRepository.findAllByEmailVerifiedFalseAndCreatedAtBefore(cutoff);
-
-    if (users.isEmpty()) {
+    int deleted = userRepository.deleteAllUnverifiedBefore(cutoff);
+    if (deleted == 0) {
       log.info("[Cleanup] No unverified users to delete");
       return;
     }
-
-    userRepository.deleteAll(users);
     log.info(
-        "[Cleanup] Deleted {} unverified user(s) older than {} days",
-        users.size(),
-        cleanupAfterDays);
+        "[Cleanup] Deleted {} unverified user(s) older than {} days", deleted, cleanupAfterDays);
   }
 }

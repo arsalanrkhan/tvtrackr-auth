@@ -27,8 +27,9 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping("/register")
-  public ResponseEntity<AuthResponse> registerUser(@RequestBody @Valid RegisterRequest request) {
-    return ResponseEntity.ok(authService.register(request));
+  public ResponseEntity<AuthResponse> registerUser(
+      @RequestBody @Valid RegisterRequest request, HttpServletResponse response) {
+    return ResponseEntity.ok(authService.register(request, response));
   }
 
   @PostMapping("/login")
@@ -65,9 +66,8 @@ public class AuthController {
   }
 
   @GetMapping("/verify-email")
-  public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
-    authService.verifyEmail(token);
-    return ResponseEntity.ok(new MessageResponse().setMessage("Email verified"));
+  public ResponseEntity<AuthResponse> verifyEmail(@RequestParam String token) {
+    return ResponseEntity.ok(authService.verifyEmail(token));
   }
 
   @PostMapping("/resend-verification-email")

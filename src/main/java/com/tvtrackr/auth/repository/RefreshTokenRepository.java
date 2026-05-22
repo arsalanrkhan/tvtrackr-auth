@@ -2,10 +2,10 @@ package com.tvtrackr.auth.repository;
 
 import com.tvtrackr.auth.entity.RefreshToken;
 import jakarta.persistence.LockModeType;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,5 +17,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
   @Query("SELECT r FROM RefreshToken r WHERE r.token = :token")
   Optional<RefreshToken> findByTokenForUpdate(@Param("token") String token);
 
-  List<RefreshToken> findAllByUserIdAndRevokedFalse(Long userId);
+  @Modifying
+  @Query(
+      "UPDATE RefreshToken r SET r.revoked = true WHERE r.user.id = :userId AND r.revoked = false")
+  void revokeAllByUserId(@Param("userId") Long userId);
 }

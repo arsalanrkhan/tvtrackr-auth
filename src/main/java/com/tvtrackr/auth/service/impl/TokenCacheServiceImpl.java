@@ -27,6 +27,18 @@ public class TokenCacheServiceImpl implements TokenCacheService {
   private Long emailVerificationTtl;
 
   @Override
+  public Optional<Long> getAndDeletePasswordResetToken(String token) {
+    String val = redisService.getAndDeleteString(PASSWORD_RESET_PREFIX + token);
+    return Optional.ofNullable(StringUtils.hasText(val) ? Long.valueOf(val) : null);
+  }
+
+  @Override
+  public Optional<Long> getAndDeleteEmailVerificationToken(String token) {
+    String val = redisService.getAndDeleteString(EMAIL_VERIFY_PREFIX + token);
+    return Optional.ofNullable(StringUtils.hasText(val) ? Long.valueOf(val) : null);
+  }
+
+  @Override
   public void savePasswordResetToken(String token, Long userId) {
     redisService.saveString(
         PASSWORD_RESET_PREFIX + token, String.valueOf(userId), passwordResetTtl);

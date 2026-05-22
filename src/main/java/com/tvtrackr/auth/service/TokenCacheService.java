@@ -4,6 +4,10 @@ import java.util.Optional;
 
 public interface TokenCacheService {
 
+  Optional<Long> getAndDeletePasswordResetToken(String token);
+
+  Optional<Long> getAndDeleteEmailVerificationToken(String token);
+
   void savePasswordResetToken(String token, Long userId);
 
   Optional<Long> getPasswordResetToken(String token);

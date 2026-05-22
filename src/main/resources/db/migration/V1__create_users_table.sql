@@ -10,6 +10,7 @@ CREATE TABLE users (
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
 
     CONSTRAINT uq_users_uuid     UNIQUE (uuid),
-    CONSTRAINT uq_users_email    UNIQUE (email),
-    CONSTRAINT uq_users_username UNIQUE (username)
+    CONSTRAINT uq_users_email    UNIQUE (email)
 );
+
+CREATE UNIQUE INDEX users_username_ci_uk ON users (LOWER(username));

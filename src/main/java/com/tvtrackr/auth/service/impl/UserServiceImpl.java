@@ -16,19 +16,21 @@ public class UserServiceImpl implements UserService {
   @Override
   public User getUserByUsernameOrEmail(String username, String email) {
     return userRepository
-        .findByEmailOrUsername(email, username)
+        .findByEmailOrUsernameCaseInsensitive(email.toLowerCase().trim(), username.trim())
         .orElseThrow(() -> new BusinessException(AuthErrors.INVALID_CREDENTIALS));
   }
 
   @Override
   public User getUserByEmail(String email) {
-    return userRepository.findByEmail(email)
+    return userRepository
+        .findByEmail(email.toLowerCase().trim())
         .orElseThrow(() -> new BusinessException(AuthErrors.USER_NOT_FOUND));
   }
 
   @Override
   public User getUserById(Long id) {
-    return userRepository.findById(id)
+    return userRepository
+        .findById(id)
         .orElseThrow(() -> new BusinessException(AuthErrors.USER_NOT_FOUND));
   }
 
@@ -39,6 +41,6 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public boolean existsByUsername(String username) {
-    return userRepository.existsByUsername(username);
+    return userRepository.existsByUsernameCaseInsensitive(username.trim());
   }
 }
