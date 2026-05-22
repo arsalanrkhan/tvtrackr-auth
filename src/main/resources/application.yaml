@@ -42,4 +42,4 @@ redis:
 
 logging:
   level:
-    org.flywaydb: DEBUG
+    root: INFO
