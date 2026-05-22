@@ -15,10 +15,10 @@ public class RegisterRequestValidator {
   private final UserRepository userRepository;
 
   public void validate(RegisterRequest request) {
-    if (userRepository.existsByEmail(request.getEmail())) {
+    if (userRepository.existsByEmail(request.getEmail().toLowerCase().trim())) {
       throw new BusinessException(EMAIL_ALREADY_EXISTS);
     }
-    if (userRepository.existsByUsernameCaseInsensitive(request.getUsername())) {
+    if (userRepository.existsByUsernameCaseInsensitive(request.getUsername().trim())) {
       throw new BusinessException(USERNAME_ALREADY_EXISTS);
     }
   }

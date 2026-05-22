@@ -10,13 +10,5 @@ public interface TokenCacheService {
 
   void savePasswordResetToken(String token, Long userId);
 
-  Optional<Long> getPasswordResetToken(String token);
-
-  void deletePasswordResetToken(String token);
-
   void saveEmailVerificationToken(String token, Long userId);
-
-  Optional<Long> getEmailVerificationToken(String token);
-
-  void deleteEmailVerificationToken(String token);
 }

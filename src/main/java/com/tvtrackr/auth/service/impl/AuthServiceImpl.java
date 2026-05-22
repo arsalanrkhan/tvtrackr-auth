@@ -168,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
     log.debug("[Password Reset] Received token={}", request.getToken());
     Long userId =
         tokenCacheService
-            .getPasswordResetToken(request.getToken())
+            .getAndDeletePasswordResetToken(request.getToken())
             .orElseThrow(() -> new BusinessException(AuthErrors.INVALID_TOKEN));
     User user = userService.getUserById(userId);
     UserAuthProvider authProvider =
@@ -181,9 +181,7 @@ public class AuthServiceImpl implements AuthService {
     authProvider.setPasswordHash(passHash);
     userAuthProviderService.save(authProvider);
 
-    tokenCacheService.getAndDeletePasswordResetToken(request.getToken());
     refreshTokenService.revokeAllByUserId(user.getId());
-
     cooldownCacheService.setCooldown(
         toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl);
     log.info(
@@ -197,13 +195,12 @@ public class AuthServiceImpl implements AuthService {
   public AuthResponse verifyEmail(String token) {
     Long userId =
         tokenCacheService
-            .getEmailVerificationToken(token)
+            .getAndDeleteEmailVerificationToken(token)
             .orElseThrow(() -> new BusinessException(AuthErrors.INVALID_TOKEN));
     User user = userService.getUserById(userId);
     user.setEmailVerified(true);
     userService.save(user);
 
-    tokenCacheService.getAndDeleteEmailVerificationToken(token);
     return buildAuthResponse(user, tokenService.generateAccessToken(user));
   }
 
@@ -237,7 +234,7 @@ public class AuthServiceImpl implements AuthService {
   private User toUser(RegisterRequest request) {
     User user = new User();
     return user.setEmail(request.getEmail().toLowerCase().trim())
-        .setUsername(request.getUsername())
+        .setUsername(request.getUsername().trim())
         .setDisplayName(request.getDisplayName());
   }
 

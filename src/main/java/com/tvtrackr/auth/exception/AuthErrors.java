@@ -8,7 +8,7 @@ public class AuthErrors extends BusinessErrors {
   public static final AuthErrors USERNAME_ALREADY_EXISTS =
       new AuthErrors("1001", "Username already in use", 409);
   public static final AuthErrors EMAIL_OR_USERNAME_ALREADY_EXISTS =
-      new AuthErrors("1002", "Username already in use", 409);
+      new AuthErrors("1002", "Username or email already in use", 409);
   public static final AuthErrors USER_NOT_FOUND = new AuthErrors("1003", "User not found", 400);
   public static final AuthErrors INVALID_CREDENTIALS =
       new AuthErrors("1004", "Invalid credentials", 401);
