@@ -165,7 +165,6 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public void resetPassword(ResetPasswordRequest request) {
-    log.debug("[Password Reset] Received token={}", request.getToken());
     Long userId =
         tokenCacheService
             .getAndDeletePasswordResetToken(request.getToken())
