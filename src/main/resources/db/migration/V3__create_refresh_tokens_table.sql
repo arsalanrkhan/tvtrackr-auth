@@ -1,4 +1,4 @@
-CREATE TABLE auth.refresh_tokens (
+CREATE TABLE refresh_tokens (
     id          BIGSERIAL       PRIMARY KEY,
     user_id     BIGINT          NOT NULL,
     token       VARCHAR(512)    NOT NULL,
@@ -9,9 +9,9 @@ CREATE TABLE auth.refresh_tokens (
     CONSTRAINT uq_refresh_tokens_token UNIQUE (token),
 
     CONSTRAINT fk_refresh_tokens_user
-        FOREIGN KEY (user_id) REFERENCES auth.users (id)
+        FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_refresh_tokens_user_id  ON auth.refresh_tokens (user_id);
-CREATE INDEX idx_refresh_tokens_token    ON auth.refresh_tokens (token);
+CREATE INDEX idx_refresh_tokens_user_id  ON refresh_tokens (user_id);
+CREATE INDEX idx_refresh_tokens_token    ON refresh_tokens (token);

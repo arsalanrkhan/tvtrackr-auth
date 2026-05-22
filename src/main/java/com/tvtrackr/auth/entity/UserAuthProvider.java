@@ -8,7 +8,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Entity
-@Table(name = "user_auth_providers", schema = "auth")
+@Table(name = "user_auth_providers")
 @Getter
 @Setter
 @NoArgsConstructor

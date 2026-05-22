@@ -1,6 +1,4 @@
-CREATE SCHEMA IF NOT EXISTS auth;
-
-CREATE TABLE auth.users (
+CREATE TABLE users (
     id              BIGSERIAL       PRIMARY KEY,
     uuid            UUID            NOT NULL DEFAULT gen_random_uuid(),
     email           VARCHAR(255)    NOT NULL,

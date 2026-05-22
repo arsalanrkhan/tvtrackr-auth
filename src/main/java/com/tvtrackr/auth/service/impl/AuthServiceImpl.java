@@ -18,6 +18,7 @@ import com.tvtrackr.common.error.BusinessException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
   private final PasswordEncoder passwordEncoder;
@@ -105,15 +107,22 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void forgotPassword(ForgotPasswordRequest request) {
+    log.info("[Password Reset] Received request for email: {}", request.getEmail());
     User user;
     try {
       user = userService.getUserByEmail(request.getEmail());
     } catch (BusinessException be) {
       // Do not throw an error if user doesn't exist to avoid enumeration attack
+      log.info("[Password Reset] Email {} not found. Returning empty response", request.getEmail());
       return;
     }
-    String token = tokenService.generateRefreshToken();
-    tokenCacheService.savePasswordResetToken(token, user.getId());
+    try {
+      String token = tokenService.generateRefreshToken();
+      tokenCacheService.savePasswordResetToken(token, user.getId());
+    } catch (Exception e) {
+      log.error("[Password Reset] Error generating password reset token, {}", e.getMessage(), e);
+      throw e;
+    }
 
     // TODO: Send email to the user with password reset link
   }

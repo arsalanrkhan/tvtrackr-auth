@@ -1,4 +1,4 @@
-CREATE TABLE auth.user_auth_providers (
+CREATE TABLE user_auth_providers (
     id            BIGSERIAL       PRIMARY KEY,
     user_id       BIGINT          NOT NULL,
     provider      VARCHAR(20)     NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE auth.user_auth_providers (
     updated_at    TIMESTAMP       NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_auth_providers_user
-        FOREIGN KEY (user_id) REFERENCES auth.users (id)
+        FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE,
 
     CONSTRAINT uq_user_provider
