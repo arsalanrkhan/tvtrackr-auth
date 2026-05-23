@@ -1,14 +1,17 @@
 package com.tvtrackr.auth.repository;
 
+import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
+
 import com.tvtrackr.auth.entity.User;
+import jakarta.persistence.QueryHint;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -37,6 +40,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
   @Query("DELETE FROM User u WHERE u.emailVerified = false AND u.createdAt < :cutoff")
   int deleteAllUnverifiedBefore(@Param("cutoff") LocalDateTime cutoff);
 
+  @QueryHints({
+    @QueryHint(name = HINT_FETCH_SIZE, value = "1000"),
+    @QueryHint(name = "org.hibernate.readOnly", value = "true")
+  })
   @Query("SELECT u.username FROM User u")
   Stream<String> streamAllUsernames();
 }

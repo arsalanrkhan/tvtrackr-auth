@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class ResetPasswordRequest {
 
   @NotBlank(message = "Token is required")
+  @Size(max = 86, message = "Invalid token")
   private String token;
 
   @NotBlank(message = "Password is required")
