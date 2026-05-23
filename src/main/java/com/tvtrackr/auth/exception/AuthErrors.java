@@ -12,7 +12,7 @@ public class AuthErrors extends BusinessErrors {
   public static final AuthErrors USER_NOT_FOUND = new AuthErrors("1003", "User not found", 400);
   public static final AuthErrors INVALID_CREDENTIALS =
       new AuthErrors("1004", "Invalid credentials", 401);
-  public static final AuthErrors INVALID_TOKEN = new AuthErrors("1005", "Invalid token", 400);
+  public static final AuthErrors INVALID_TOKEN = new AuthErrors("1005", "Invalid token", 401);
   public static final AuthErrors PASSWORD_RESET_NOT_SUPPORTED =
       new AuthErrors("1006", "Password reset not supported for this account", 400);
   public static final AuthErrors EMAIL_SEND_FAILED =

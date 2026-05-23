@@ -37,6 +37,7 @@ public class AuthEmailServiceImpl implements AuthEmailService {
   private final EmailService emailService;
   private final SpringTemplateEngine templateEngine;
 
+  // TODO: Configure this URL to be FE once FE is implemented, it points to localhost for now
   @Value("${app.frontend.base-url}")
   private String frontendBaseUrl;
 

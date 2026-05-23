@@ -291,7 +291,7 @@ public class AuthController {
   public ResponseEntity<UsernameAvailabilityResponse> usernameAvailability(
       @Parameter(description = "Username to check (minimum 3 characters)", required = true)
           @PathVariable
-          @Size(min = 3, message = "Username must be at least 3 characters")
+          @Size(min = 3, max = 40, message = "Username must be at betwee 3 and 40 characters")
           String username) {
     boolean available = authService.usernameAvailability(username);
     return ResponseEntity.ok(new UsernameAvailabilityResponse().setAvailable(available));

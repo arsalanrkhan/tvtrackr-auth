@@ -80,6 +80,9 @@ public class AuthServiceImpl implements AuthService {
 
     sendVerificationEmail(user);
 
+    // TODO: Once kafka is added, move verification email and BloomFilter update to Kafka event with
+    // TransactionListener
+
     return new AuthResponse()
         .setUuid(user.getUuid().toString())
         .setEmail(user.getEmail())
@@ -151,17 +154,15 @@ public class AuthServiceImpl implements AuthService {
       return;
     }
 
-    if (cooldownCacheService.isOnCooldown(toPasswordResetCooldownKey(user.getId()))) {
+    if (!cooldownCacheService.trySetCooldown(
+        toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl)) {
       log.warn("[Password Reset] Too many requests for user={}", user.getUuid());
       throw new BusinessException(AuthErrors.TOO_MANY_REQUESTS);
     }
 
     String token = tokenService.generateRefreshToken();
     tokenCacheService.savePasswordResetToken(token, user.getId());
-
     authEmailService.sendPasswordResetEmail(user.getEmail(), user.getDisplayName(), token);
-    cooldownCacheService.setCooldown(
-        toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl);
     log.info("[Password Reset] Password reset email sent to {}", request.getEmail());
   }
 
@@ -184,8 +185,6 @@ public class AuthServiceImpl implements AuthService {
     userAuthProviderService.save(authProvider);
 
     refreshTokenService.revokeAllByUserId(user.getId());
-    cooldownCacheService.setCooldown(
-        toPasswordResetCooldownKey(user.getId()), passwordResetCooldownTtl);
     log.info(
         "[Password Reset] Successfully reset password for user={} email={}",
         user.getUsername(),
@@ -217,14 +216,13 @@ public class AuthServiceImpl implements AuthService {
     if (user.isEmailVerified()) {
       return;
     }
-    if (cooldownCacheService.isOnCooldown(toResendVerificationCooldownKey(user.getId()))) {
+    if (!cooldownCacheService.trySetCooldown(
+        toResendVerificationCooldownKey(user.getId()), emailVerificationCooldownTtl)) {
       log.warn("[Resend Verification Email] Too many requests for user={}", user.getUuid());
       throw new BusinessException(AuthErrors.TOO_MANY_REQUESTS);
     }
     log.info("[Resend Verification Email] Sending email for {}", request.getEmail());
     sendVerificationEmail(user);
-    cooldownCacheService.setCooldown(
-        toResendVerificationCooldownKey(user.getId()), emailVerificationCooldownTtl);
     log.info("[Resend Verification Email] Sent email for {}", request.getEmail());
   }
 
