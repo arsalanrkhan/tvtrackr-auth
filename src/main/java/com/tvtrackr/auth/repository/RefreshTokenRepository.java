@@ -26,8 +26,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
   @Modifying
   @Query(
       value =
-          "DELETE FROM refresh_tokens WHERE id IN "
-              + "(SELECT id FROM refresh_tokens WHERE revoked = true OR expires_at < :cutoff LIMIT :chunkSize)",
+          "DELETE FROM RefreshToken WHERE id IN "
+              + "(SELECT id FROM RefreshToken WHERE revoked = true OR expires_at < :cutoff LIMIT :chunkSize)",
       nativeQuery = true)
   int deleteExpiredOrRevokedChunk(
       @Param("cutoff") LocalDateTime cutoff, @Param("chunkSize") int chunkSize);
