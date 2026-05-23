@@ -4,6 +4,8 @@ import com.tvtrackr.auth.entity.User;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -34,4 +36,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
   @Modifying
   @Query("DELETE FROM User u WHERE u.emailVerified = false AND u.createdAt < :cutoff")
   int deleteAllUnverifiedBefore(@Param("cutoff") LocalDateTime cutoff);
+
+  @Query("SELECT u.username FROM User u")
+  Stream<String> streamAllUsernames();
 }

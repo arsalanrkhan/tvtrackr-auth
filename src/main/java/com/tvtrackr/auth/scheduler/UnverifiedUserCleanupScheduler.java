@@ -1,5 +1,7 @@
 package com.tvtrackr.auth.scheduler;
 
+import com.tvtrackr.auth.bloomfilter.UsernameBFSeeder;
+import com.tvtrackr.auth.bloomfilter.service.UsernameBFService;
 import com.tvtrackr.auth.repository.UserRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UnverifiedUserCleanupScheduler {
 
   private final UserRepository userRepository;
+  private final UsernameBFService usernameBFService;
+  private final UsernameBFSeeder usernameBFSeeder;
 
   @Value("${app.scheduler.cleanup.after-days}")
   private Long cleanupAfterDays;
@@ -33,6 +37,15 @@ public class UnverifiedUserCleanupScheduler {
 
     log.info(
         "[Cleanup] Deleted {} unverified user(s) older than {} days", deleted, cleanupAfterDays);
+
+    // Note: there is a brief window between clear() and seed() completing where
+    // the filter is empty. During this time, mightExist() returns false for all
+    // usernames, causing usernameAvailability() to skip the DB check and return
+    // available. The DB unique constraint on registration remains the safety net.
+    // When moving to large scale, we can add a blue/green filter strategy.
+    usernameBFService.clear();
+    usernameBFSeeder.seed();
+
     long endTime = System.currentTimeMillis();
     log.info("[Cleanup] Job finished at {}. Elapsed time: {}", endTime, endTime - startTime);
   }

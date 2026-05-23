@@ -2,6 +2,7 @@ package com.tvtrackr.auth.service.impl;
 
 import static com.tvtrackr.auth.util.ApplicationUtil.isValidToken;
 
+import com.tvtrackr.auth.bloomfilter.service.UsernameBFService;
 import com.tvtrackr.auth.constants.enums.AuthProvider;
 import com.tvtrackr.auth.constants.enums.GlobalConstants;
 import com.tvtrackr.auth.dto.req.*;
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
   private final TokenCacheService tokenCacheService;
   private final CooldownCacheService cooldownCacheService;
   private final AuthEmailService authEmailService;
+  private final UsernameBFService usernameBFService;
   private final RegisterRequestValidator registerRequestValidator;
 
   private static final String PASSWORD_RESET_CD_PREFIX =
@@ -64,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
     user.getAuthProviders().add(toAuthProvider(user, request.getPassword()));
     try {
       userService.save(user);
+      usernameBFService.add(user.getUsername());
     } catch (DataIntegrityViolationException exception) {
       throw new BusinessException(AuthErrors.EMAIL_OR_USERNAME_ALREADY_EXISTS);
     }
@@ -227,6 +230,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public boolean usernameAvailability(String username) {
+    if (!usernameBFService.mightExist(username)) {
+      return true;
+    }
     return !userService.existsByUsername(username);
   }
 

@@ -57,3 +57,7 @@ resend:
   api-key: ${RESEND_API_KEY}
   from-email: ${RESEND_FROM_EMAIL}
   from-name: ${RESEND_FROM_NAME:TVTrackr}
+
+bloom-filter:
+  bit-size: ${BF_BIT_SIZE:9585059}
+  hash-count: ${BF_HASH_COUNT:7}
