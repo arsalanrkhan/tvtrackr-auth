@@ -38,10 +38,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   @Modifying
   @Query(
-      value = "DELETE FROM users WHERE id IN " +
-          "(SELECT id FROM users WHERE email_verified = false AND created_at < :cutoff LIMIT :chunkSize)",
+      value =
+          "DELETE FROM users  WHERE id IN "
+              + "(SELECT id FROM users  WHERE email_verified = false AND created_at < :cutoff LIMIT :chunkSize)",
       nativeQuery = true)
-  int deleteAllUnverifiedBeforeChunk(@Param("cutoff") LocalDateTime cutoff, @Param("chunkSize") int chunkSize);
+  int deleteAllUnverifiedBeforeChunk(
+      @Param("cutoff") LocalDateTime cutoff, @Param("chunkSize") int chunkSize);
 
   @QueryHints({
     @QueryHint(name = HINT_FETCH_SIZE, value = "1000"),
