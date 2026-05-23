@@ -37,6 +37,12 @@ app:
     cleanup:
       after-days: ${CLEANUP_UNVERIFIED_USERS_AFTER_DAYS:7}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
 redis:
   cache:
     password-reset:
@@ -61,3 +67,4 @@ resend:
 bloom-filter:
   bit-size: ${BF_BIT_SIZE:9585059}
   hash-count: ${BF_HASH_COUNT:7}
+
