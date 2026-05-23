@@ -65,4 +65,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   public void revokeAllByUserId(Long userId) {
     refreshTokenRepository.revokeAllByUserId(userId);
   }
+
+  @Override
+  public int deleteExpiredOrRevoked(LocalDateTime cutoff) {
+    return refreshTokenRepository.deleteExpiredOrRevoked(cutoff);
+  }
 }

@@ -4,6 +4,7 @@ import com.tvtrackr.auth.repository.UserRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,15 +21,19 @@ public class UnverifiedUserCleanupScheduler {
   private Long cleanupAfterDays;
 
   @Scheduled(cron = "0 0 0 * * *")
+  @SchedulerLock(name = "unverifiedUserCleanup", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
   @Transactional
   public void cleanupUnverifiedUsers() {
+
+    long startTime = System.currentTimeMillis();
+    log.info("[Cleanup] Job started at {}", startTime);
+
     LocalDateTime cutoff = LocalDateTime.now().minusDays(cleanupAfterDays);
     int deleted = userRepository.deleteAllUnverifiedBefore(cutoff);
-    if (deleted == 0) {
-      log.info("[Cleanup] No unverified users to delete");
-      return;
-    }
+
     log.info(
         "[Cleanup] Deleted {} unverified user(s) older than {} days", deleted, cleanupAfterDays);
+    long endTime = System.currentTimeMillis();
+    log.info("[Cleanup] Job finished at {}. Elapsed time: {}", endTime, endTime - startTime);
   }
 }
