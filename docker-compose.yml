@@ -23,6 +23,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      JAVA_TOOL_OPTIONS: -Duser.timezone=UTC
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db?useSSL=false&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
