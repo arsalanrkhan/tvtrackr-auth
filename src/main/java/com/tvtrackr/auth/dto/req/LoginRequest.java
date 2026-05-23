@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
   @NotBlank(message = "Email or username is required")
-  @Size(min = 3, max = 256, message = "Data too long")
+  @Size(min = 3, max = 254, message = "Data too long")
   private String emailOrUsername;
 
   @NotBlank(message = "Password is required")
