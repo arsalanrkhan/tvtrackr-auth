@@ -17,16 +17,19 @@ public class RefreshTokenCleanupScheduler {
   private final RefreshTokenService refreshTokenService;
 
   @Scheduled(cron = "0 0 1 * * *")
-  @Transactional
   @SchedulerLock(name = "refreshTokenCleanup", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
   public void cleanupExpiredTokens() {
     long startTime = System.currentTimeMillis();
     log.info("[CleanupToken] Job started at {}", startTime);
 
-    int deleted = refreshTokenService.deleteExpiredOrRevoked(LocalDateTime.now());
+    int total = 0, deleted;
+    do {
+      deleted = refreshTokenService.deleteExpiredOrRevoked(LocalDateTime.now(), 1000);
+      total += deleted;
+    } while (deleted > 0);
 
     long endTime = System.currentTimeMillis();
-    log.info("[CleanupToken] Deleted {} expired or revoked refresh token(s)", deleted);
+    log.info("[CleanupToken] Deleted {} expired or revoked refresh token(s)", total);
     log.info("[CleanupToken] Job finished at {}. Elapsed time: {}", endTime, endTime - startTime);
   }
 }

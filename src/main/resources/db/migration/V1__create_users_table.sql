@@ -14,3 +14,4 @@ CREATE TABLE users (
 );
 
 CREATE UNIQUE INDEX users_username_ci_uk ON users (LOWER(username));
+CREATE INDEX idx_users_unverified_cleanup ON users (created_at) WHERE email_verified = false;

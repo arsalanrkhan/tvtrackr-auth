@@ -23,11 +23,11 @@ public interface RefreshTokenService {
   RefreshToken find(String token);
 
   /**
-   * Finds a refresh token by its raw string value using a pessimistic write lock
-   * ({@code SELECT FOR UPDATE}).
+   * Finds a refresh token by its raw string value using a pessimistic write lock ({@code SELECT FOR
+   * UPDATE}).
    *
-   * <p>Must be called within an active transaction. Used during refresh and logout flows to
-   * prevent race conditions where concurrent requests could consume or revoke the same token
+   * <p>Must be called within an active transaction. Used during refresh and logout flows to prevent
+   * race conditions where concurrent requests could consume or revoke the same token
    * simultaneously.
    *
    * @param tokenStr the raw refresh token string
@@ -61,13 +61,15 @@ public interface RefreshTokenService {
   void revokeAllByUserId(Long userId);
 
   /**
-   * Bulk deletes all refresh tokens that are revoked or have expired before the given cutoff.
+   * Deletes a chunk of refresh tokens that are revoked or have expired before the given cutoff.
    *
-   * <p>Uses a bulk {@code @Modifying @Query} delete — tokens are not loaded into memory.
-   * Called by the scheduled cleanup job.
+   * <p>Uses a native chunked delete limited by {@code chunkSize} — call in a loop until 0 is
+   * returned. Each call runs in its own transaction ({@code REQUIRES_NEW}) to release row locks
+   * between chunks.
    *
    * @param cutoff tokens expiring before this timestamp are eligible for deletion
-   * @return the number of tokens deleted
+   * @param chunkSize maximum number of tokens to delete per call
+   * @return the number of tokens deleted in this chunk
    */
-  int deleteExpiredOrRevoked(LocalDateTime cutoff);
+  int deleteExpiredOrRevoked(LocalDateTime cutoff, int chunkSize);
 }

@@ -2,7 +2,7 @@ package com.tvtrackr.auth.scheduler;
 
 import com.tvtrackr.auth.bloomfilter.UsernameBFSeeder;
 import com.tvtrackr.auth.bloomfilter.service.UsernameBFService;
-import com.tvtrackr.auth.repository.UserRepository;
+import com.tvtrackr.auth.service.UserService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,14 +10,13 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class UnverifiedUserCleanupScheduler {
 
-  private final UserRepository userRepository;
+  private final UserService userService;
   private final UsernameBFService usernameBFService;
   private final UsernameBFSeeder usernameBFSeeder;
 
@@ -26,17 +25,19 @@ public class UnverifiedUserCleanupScheduler {
 
   @Scheduled(cron = "0 0 0 * * *")
   @SchedulerLock(name = "unverifiedUserCleanup", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
-  @Transactional
   public void cleanupUnverifiedUsers() {
 
     long startTime = System.currentTimeMillis();
     log.info("[Cleanup] Job started at {}", startTime);
 
     LocalDateTime cutoff = LocalDateTime.now().minusDays(cleanupAfterDays);
-    int deleted = userRepository.deleteAllUnverifiedBefore(cutoff);
+    int total = 0, deleted;
+    do {
+      deleted = userService.deleteUnverifiedUsersWithCutoffInChunk(cutoff, 1000);
+      total += deleted;
+    } while (deleted > 0);
 
-    log.info(
-        "[Cleanup] Deleted {} unverified user(s) older than {} days", deleted, cleanupAfterDays);
+    log.info("[Cleanup] Deleted {} unverified user(s) older than {} days", total, cleanupAfterDays);
 
     // Note: there is a brief window between clear() and seed() completing where
     // the filter is empty. During this time, mightExist() returns false for all

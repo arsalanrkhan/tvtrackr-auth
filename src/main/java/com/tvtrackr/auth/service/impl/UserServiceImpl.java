@@ -5,8 +5,11 @@ import com.tvtrackr.auth.exception.AuthErrors;
 import com.tvtrackr.auth.repository.UserRepository;
 import com.tvtrackr.auth.service.UserService;
 import com.tvtrackr.common.error.BusinessException;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,5 +45,11 @@ public class UserServiceImpl implements UserService {
   @Override
   public boolean existsByUsername(String username) {
     return userRepository.existsByUsernameCaseInsensitive(username.trim());
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public int deleteUnverifiedUsersWithCutoffInChunk(LocalDateTime cutoff, int chunkSize) {
+    return userRepository.deleteAllUnverifiedBeforeChunk(cutoff, chunkSize);
   }
 }

@@ -37,8 +37,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
   boolean existsByUsernameCaseInsensitive(@Param("username") String username);
 
   @Modifying
-  @Query("DELETE FROM User u WHERE u.emailVerified = false AND u.createdAt < :cutoff")
-  int deleteAllUnverifiedBefore(@Param("cutoff") LocalDateTime cutoff);
+  @Query(
+      value = "DELETE FROM users WHERE id IN " +
+          "(SELECT id FROM users WHERE email_verified = false AND created_at < :cutoff LIMIT :chunkSize)",
+      nativeQuery = true)
+  int deleteAllUnverifiedBeforeChunk(@Param("cutoff") LocalDateTime cutoff, @Param("chunkSize") int chunkSize);
 
   @QueryHints({
     @QueryHint(name = HINT_FETCH_SIZE, value = "1000"),

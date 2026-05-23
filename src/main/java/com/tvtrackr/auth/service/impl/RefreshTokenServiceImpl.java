@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -67,7 +68,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
   }
 
   @Override
-  public int deleteExpiredOrRevoked(LocalDateTime cutoff) {
-    return refreshTokenRepository.deleteExpiredOrRevoked(cutoff);
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public int deleteExpiredOrRevoked(LocalDateTime cutoff, int chunkSize) {
+    return refreshTokenRepository.deleteExpiredOrRevokedChunk(cutoff, chunkSize);
   }
 }
