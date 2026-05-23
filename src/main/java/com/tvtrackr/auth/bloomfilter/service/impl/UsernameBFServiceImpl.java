@@ -5,6 +5,7 @@ import static java.nio.charset.StandardCharsets.*;
 import com.google.common.hash.Hashing;
 import com.tvtrackr.auth.bloomfilter.service.UsernameBFService;
 import com.tvtrackr.common.redis.service.RedisService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,17 +38,14 @@ public class UsernameBFServiceImpl implements UsernameBFService {
 
   @Override
   public void add(String username) {
-    for (long offset : getOffsets(username.toLowerCase())) {
-      redisService.setBit(BLOOM_KEY, offset);
-    }
+    redisService.setBitsPipelined(BLOOM_KEY, getOffsets(username.toLowerCase()));
   }
 
   @Override
   public boolean mightExist(String username) {
-    for (long offset : getOffsets(username.toLowerCase())) {
-      if (!redisService.getBit(BLOOM_KEY, offset)) return false;
-    }
-    return true;
+    List<Boolean> bits =
+        redisService.getBitsPipelined(BLOOM_KEY, getOffsets(username.toLowerCase()));
+    return bits.stream().allMatch(Boolean.TRUE::equals);
   }
 
   @Override
