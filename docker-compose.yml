@@ -39,6 +39,8 @@ services:
       APP_REFRESH_TOKEN_EXPIRY_DAYS: 30
       REDIS_CACHE_PASSWORD_RESET_TTL: 900000
       REDIS_CACHE_EMAIL_VERIFICATION_TTL: 900000
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED}
     depends_on:
       postgres:
         condition: service_healthy
