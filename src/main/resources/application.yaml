@@ -33,6 +33,7 @@ server:
     threads:
       max: ${MAX_THREADS:50}
       min-spare: ${MIN_SPARE_THREADS:5}
+    connection-timeout: 10s
 
 app:
   jwt:
